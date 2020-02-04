@@ -83,6 +83,8 @@ int main()
     // Load the image
     String folderpath = "C:/Users/Emanuele/source/repos/HistogramEqualization/HistogramEqualization/img/*.jpg";
     vector<String> filenames;
+    double timesAdded = 0;
+    int imageCounter = 0;
     glob(folderpath, filenames);
     for (size_t i = 0; i < filenames.size(); i++)
     {
@@ -121,9 +123,14 @@ int main()
         imshow("Equalized Image", im);
         waitKey();
 
+        timesAdded += elapsed_time;
+        imageCounter += 1;
 
 
     }
+
+    double meanTimes = timesAdded / imageCounter;
+    cout << "MEAN ELAPSED TIME : " << meanTimes << " ms" << endl;
 
 }
 
