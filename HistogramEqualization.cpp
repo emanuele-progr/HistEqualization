@@ -25,13 +25,13 @@ void convertToYCbCr(Mat im, int histogram[], int YCbCrvector[]){
             int Cb = R * -.148000 + G * -.291000 + B * .439000 + 128;
             int Cr = R * .439000 + G * -.368000 + B * -.071000 + 128;
 
-            histogram[Y]++;
-
             int index = (j * im.rows + i) * 3;
 
             YCbCrvector[index] = Y;
             YCbCrvector[index + 1] = Cb;
             YCbCrvector[index + 2] = Cr;
+
+            histogram[Y]++;
 
         }
     }
@@ -90,8 +90,8 @@ int main()
     {
         Mat im = imread(filenames[i]);
         resize(im, im, Size(800, 600), INTER_NEAREST);
-        imshow("Original Image", im);
-        waitKey();
+        //imshow("Original Image", im);
+        //waitKey();
 
         int width = im.cols;
         int height = im.rows;
@@ -101,11 +101,8 @@ int main()
         int* YCbCrvector = new int[height * width * 3];
 
         // Generate the histogram and convert RGB -> YCbCr
-        int histogram[256];
-        // initialize all intensity values to 0
-        for (int i = 0; i < 256; i++) {
-            histogram[i] = 0;
-        }
+        int histogram[256] = { 0 };
+      
 
         convertToYCbCr(im, histogram, YCbCrvector);
 
@@ -120,8 +117,8 @@ int main()
         double elapsed_time = chrono::duration_cast<chrono::milliseconds>(end - start).count();
 
         cout << "elapsed : " << elapsed_time << " ms" << endl;
-        imshow("Equalized Image", im);
-        waitKey();
+        //imshow("Equalized Image", im);
+        //waitKey();
 
         timesAdded += elapsed_time;
         imageCounter += 1;
