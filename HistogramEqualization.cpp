@@ -8,34 +8,28 @@
 using namespace std;
 using namespace cv;
 
-void convertToYCbCr(Mat im, int histogram[], int YCbCrvector[]){
+void convertToYCbCr(int width, int height, unsigned char * im_ptr, int histogram[]){
 
-    for (int i = 0; i < im.rows; i++) {
-        for (int j = 0; j < im.cols; j++) {
+    for (int i = 0; i < height * width * 3; i += 3) {
 
-            Vec3b intensity = im.at<Vec3b>(i, j);
+        int R = im_ptr[i + 0];
+        int G = im_ptr[i + 1];
+        int B = im_ptr[i + 2];
 
-            int R = intensity.val[0];
-            int G = intensity.val[1];
-            int B = intensity.val[2];
+        int Y = R * .257000 + G * .504000 + B * .098000 + 16;
+        int Cb = R * -.148000 + G * -.291000 + B * .439000 + 128;
+        int Cr = R * .439000 + G * -.368000 + B * -.071000 + 128;
 
-            //conversion to YCbCr space
+        im_ptr[i + 0] = Y;
+        im_ptr[i + 1] = Cb;
+        im_ptr[i + 2] = Cr;
 
-            int Y = R * .257000 + G * .504000 + B * .098000 + 16;
-            int Cb = R * -.148000 + G * -.291000 + B * .439000 + 128;
-            int Cr = R * .439000 + G * -.368000 + B * -.071000 + 128;
-
-            int index = (j * im.rows + i) * 3;
-
-            YCbCrvector[index] = Y;
-            YCbCrvector[index + 1] = Cb;
-            YCbCrvector[index + 2] = Cr;
-
-            histogram[Y]++;
-
-        }
+        histogram[Y] ++;
     }
-}
+
+ }
+    
+
 
 void equalizeHist(int histogram[], int equalizedHist[], int cols, int rows)
 {
@@ -51,29 +45,27 @@ void equalizeHist(int histogram[], int equalizedHist[], int cols, int rows)
     }
 }
 
-void revertToRGB(Mat im, int width, int height, int equalizedHist[], int YCbCrvector[]) {
-    for (int i = 0; i < height; i++) {
-        for (int j = 0; j < width; j++) {
+void revertToRGB(unsigned char * im_ptr, int width, int height, int equalizedHist[]) {
+    for (int i = 0; i < height * width * 3; i += 3) {
 
-            int index = (j * height + i) * 3;
+        int value_before = im_ptr[i];
+        int value_equalized = equalizedHist[value_before];
 
-            int Y = equalizedHist[YCbCrvector[index]];
-            int Cb = YCbCrvector[index + 1];
-            int Cr = YCbCrvector[index + 2];
+        im_ptr[i] = value_equalized;
 
-            unsigned char R = (unsigned char)max(0, min(255, (int)((Y - 16) * 1.164 + 1.596 * (Cr - 128))));
-            unsigned char G = (unsigned char)max(0, min(255, (int)((Y - 16) * 1.164 - 0.813 * (Cr - 128) - (0.392 * (Cb - 128)))));
-            unsigned char B = (unsigned char)max(0, min(255, (int)((Y - 16) * 1.164 + 2.017 * (Cb - 128))));
+        int Y = im_ptr[i + 0];
+        int Cb = im_ptr[i + 1];
+        int Cr = im_ptr[i + 2];
 
-            Vec3b intensity = im.at<Vec3b>(i, j);
+        unsigned char R = (unsigned char)max(0, min(255, (int)((Y - 16) * 1.164 + 1.596 * (Cr - 128))));
+        unsigned char G = (unsigned char)max(0, min(255, (int)((Y - 16) * 1.164 - 0.813 * (Cr - 128) - (0.392 * (Cb - 128)))));
+        unsigned char B = (unsigned char)max(0, min(255, (int)((Y - 16) * 1.164 + 2.017 * (Cb - 128))));
 
-            intensity.val[0] = R;
-            intensity.val[1] = G;
-            intensity.val[2] = B;
-
-            im.at<Vec3b>(i, j) = intensity;
-        }
+        im_ptr[i + 0] = R;
+        im_ptr[i + 1] = G;
+        im_ptr[i + 2] = B;
     }
+
 }
 
 
@@ -90,28 +82,35 @@ int main()
     {
         Mat im = imread(filenames[i]);
         resize(im, im, Size(800, 600), INTER_NEAREST);
+        unsigned char* im_ptr = im.ptr();
         //imshow("Original Image", im);
         //waitKey();
 
+        
         int width = im.cols;
         int height = im.rows;
 
         auto start = chrono::steady_clock::now();
 
-        int* YCbCrvector = new int[height * width * 3];
+        //int* YCbCrvector = new int[height * width * 3];
 
         // Generate the histogram and convert RGB -> YCbCr
-        int histogram[256] = { 0 };
+
+        int histogram[256];
+
+        for (int i = 0; i < 256; i++) {
+            histogram[i] = 0;
+        }
       
 
-        convertToYCbCr(im, histogram, YCbCrvector);
+        convertToYCbCr(width, height, im_ptr, histogram);
 
         // Generate the equalized histogram
         int equalizedHist[256];
         equalizeHist(histogram, equalizedHist, width, height);
 
         // Back to RGB
-        revertToRGB(im, width, height, equalizedHist, YCbCrvector);
+        revertToRGB(im_ptr, width, height, equalizedHist);
 
         auto end = chrono::steady_clock::now();
         double elapsed_time = chrono::duration_cast<chrono::milliseconds>(end - start).count();
