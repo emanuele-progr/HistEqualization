@@ -73,7 +73,7 @@ void revertToRGB(unsigned char * im_ptr, int width, int height, int equalizedHis
 int main()
 {
     // Load the image
-    String folderpath = "C:/Users/Emanuele/source/repos/HistogramEqualization/HistogramEqualization/img/*.jpg";
+    String folderpath = "img/*.jpg";
     vector<String> filenames;
     double timesAdded = 0;
     int imageCounter = 0;
@@ -81,7 +81,7 @@ int main()
     for (size_t i = 0; i < filenames.size(); i++)
     {
         Mat im = imread(filenames[i]);
-        resize(im, im, Size(800, 600), INTER_NEAREST);
+        resize(im, im, Size(2000, 2000), INTER_NEAREST);
         unsigned char* im_ptr = im.ptr();
         //imshow("Original Image", im);
         //waitKey();
