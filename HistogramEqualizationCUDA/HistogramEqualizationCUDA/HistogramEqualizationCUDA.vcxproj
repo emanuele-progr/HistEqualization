@@ -23,7 +23,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
-    <UseDebugLibraries>false</UseDebugLibraries>
+    <UseDebugLibraries>true</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
     <PlatformToolset>v142</PlatformToolset>
@@ -41,6 +41,10 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
+    <IncludePath>c:\opencv\build\include;c:\ProgramData\NVIDIA Corporation\CUDA Samples\v10.2\common\inc;C:\ProgramData\NVIDIA Corporation\CUDA Samples\v10.2\common\lib\x64;C:\ProgramData\NVIDIA Corporation\CUDA Samples\v10.2\7_CUDALibraries\common\FreeImage\lib\x64;C:\ProgramData\NVIDIA Corporation\CUDA Samples\v10.2\7_CUDALibraries\common\UtilNPP;C:\ProgramData\NVIDIA Corporation\CUDA Samples\v10.2\7_CUDALibraries\common\FreeImage\include;C:\ProgramData\NVIDIA Corporation\CUDA Samples\v10.2\7_CUDALibraries\.;$(IncludePath)</IncludePath>
+    <LibraryPath>c:\opencv\build\x64\vc15\lib;c:\Users\eghia\source\common\inc;C:\Users\eghia\source\common\lib\x64;C:\ProgramData\NVIDIA Corporation\CUDA Samples\v10.2\7_CUDALibraries\common\FreeImage\lib\x64;C:\ProgramData\NVIDIA Corporation\CUDA Samples\v10.2\7_CUDALibraries\common\FreeImage\include;C:\ProgramData\NVIDIA Corporation\CUDA Samples\v10.2\7_CUDALibraries\.;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <IncludePath>c:\opencv\build\include;$(IncludePath)</IncludePath>
     <LibraryPath>c:\opencv\build\x64\vc15\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
@@ -54,10 +58,11 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
       <AdditionalDependencies>cudart_static.lib;opencv_world420d.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(CudaToolkitLibDir);C:\ProgramData\NVIDIA Corporation\CUDA Samples\v10.2\common\lib\x64;C:\ProgramData\NVIDIA Corporation\CUDA Samples\v10.2\7_CUDALibraries\common\FreeImage\lib\x64;C:\ProgramData\NVIDIA Corporation\CUDA Samples\v10.2\7_CUDALibraries\.;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
-      <Include>c:\opencv\build\include;%(Include)</Include>
+      <Include>c:\opencv\build\include;c:\ProgramData\NVIDIA Corporation\CUDA Samples\v10.2\7_CUDALibraries\.;c:\Users\eghia\source\common\inc;%(Include)</Include>
     </CudaCompile>
     <CudaLink>
       <AdditionalLibraryDirectories>opencv_world420d.lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -80,7 +85,11 @@
     </Link>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
+      <Include>c:\opencv\build\include;%(Include)</Include>
     </CudaCompile>
+    <CudaLink>
+      <AdditionalLibraryDirectories>opencv_world420.lib;opencv_world420d.lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </CudaLink>
   </ItemDefinitionGroup>
   <ItemGroup>
     <CudaCompile Include="histogramEqualizationCUDA.cu" />
@@ -94,8 +103,11 @@
     <Image Include="img\lupo.jpg" />
     <Image Include="img\montagne.jpg" />
     <Image Include="img\montagne2.jpg" />
+    <Image Include="img\montagne3.jpg" />
     <Image Include="img\orsi.jpg" />
     <Image Include="img\panorama.jpg" />
+    <Image Include="img\panorama2.jpg" />
+    <Image Include="img\perugia.jpg" />
     <Image Include="img\skull.jpg" />
     <Image Include="img\tramonto.jpg" />
     <Image Include="tree1.jpg" />
