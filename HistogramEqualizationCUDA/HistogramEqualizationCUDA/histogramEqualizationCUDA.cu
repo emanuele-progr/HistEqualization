@@ -181,7 +181,7 @@ int main() {
 	for (size_t i = 0; i < filenames.size(); i++) {
 
 		Mat im = imread(filenames[i]);
-		resize(im, im, Size(7680, 4800), INTER_NEAREST);
+		resize(im, im, Size(800, 600), INTER_NEAREST);
 		//imshow("Original Image", im);
 		//waitKey();
 
@@ -192,10 +192,11 @@ int main() {
 		auto start = chrono::steady_clock::now();
 
 		int host_equalized[HIST_LENGHT];						//cpu equalized histogram
-		int host_cumulative_dist[HIST_LENGHT] = { 0 };
+		//int host_cumulative_dist[HIST_LENGHT] = { 0 };
 
 		unsigned char* host_image = im.ptr();		//Mat image to array image
-		int host_histogram[HIST_LENGHT] = { 0 };					//cpu histogram
+
+		//int host_histogram[HIST_LENGHT] = { 0 };					//cpu histogram
 
 		unsigned char* device_image;	//gpu image
 
@@ -213,7 +214,11 @@ int main() {
 		//copy the image on global memory.
 		
 		CUDA_CHECK_RETURN(cudaMemcpy(device_image, host_image, sizeof(char) * (width * height * 3), cudaMemcpyHostToDevice));
-		CUDA_CHECK_RETURN(cudaMemcpy(device_histogram, host_histogram, sizeof(int) * 256, cudaMemcpyHostToDevice));
+
+		//initialize gpu hist and cumulative hist
+
+		CUDA_CHECK_RETURN(cudaMemset(device_histogram, 0, sizeof(int) * 256));
+		CUDA_CHECK_RETURN(cudaMemset(device_cumulative_dist, 0, sizeof(int) * 256));
 
 		int block_size = HIST_LENGHT;
 		int grid_size = ((width * height + (block_size - 1)) / block_size) / 2 ;
@@ -222,11 +227,7 @@ int main() {
 		
 		convertToYCbCr << <grid_size, block_size >> > (device_image, width, height, device_histogram);
 
-		//copy to host the histogram computed.
-
-		CUDA_CHECK_RETURN(cudaMemcpy(host_histogram, device_histogram, sizeof(int) * 256, cudaMemcpyDeviceToHost));
-
-		//calculate cumulative distribution hist
+		//CUDA_CHECK_RETURN(cudaMemcpy(host_histogram, device_histogram, sizeof(int) * 256, cudaMemcpyDeviceToHost));
 		
 		/*
 		host_cumulative_dist[0] = host_histogram[0];
@@ -237,9 +238,8 @@ int main() {
 		
 		*/
 
-		//copy to device
-		CUDA_CHECK_RETURN(cudaMemcpy(device_equalized, host_equalized, sizeof(int) * 256, cudaMemcpyHostToDevice));
-		CUDA_CHECK_RETURN(cudaMemcpy(device_cumulative_dist, host_cumulative_dist, sizeof(int) * 256, cudaMemcpyHostToDevice));
+		//CUDA_CHECK_RETURN(cudaMemcpy(device_equalized, host_equalized, sizeof(int) * 256, cudaMemcpyHostToDevice));
+		//CUDA_CHECK_RETURN(cudaMemcpy(device_cumulative_dist, host_cumulative_dist, sizeof(int) * 256, cudaMemcpyHostToDevice));
 
 		calcCumulativeHist << <1, block_size >> > (device_cumulative_dist, device_histogram, width, height);
 
@@ -272,8 +272,8 @@ int main() {
 
 		Mat equalized_image = Mat(Size(width, height), CV_8UC3, host_image);
 		//imwrite(filenames[i] + "Equalized.jpg",final_image);
-		//imshow("Final Image", equalized_image);
-		//waitKey();
+		imshow("Final Image", equalized_image);
+		waitKey();
 
 		timesAdded += elapsed_time;
 		imageCounter += 1;

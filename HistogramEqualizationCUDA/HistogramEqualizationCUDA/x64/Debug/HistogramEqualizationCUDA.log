@@ -1,10 +1,13 @@
 ﻿  Compiling CUDA source file histogramEqualizationCUDA.cu...
   
   C:\Users\eghia\source\repos\HistogramEqualizationCUDA\HistogramEqualizationCUDA>"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.2\bin\nvcc.exe" -gencode=arch=compute_30,code=\"sm_30,compute_30\" --use-local-env -ccbin "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.24.28314\bin\HostX86\x64" -x cu  -Ic:\opencv\build\include -I"c:\ProgramData\NVIDIA Corporation\CUDA Samples\v10.2\7_CUDALibraries\." -Ic:\Users\eghia\source\common\inc -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.2\include" -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.2\include"  -G   --keep-dir x64\Debug -maxrregcount=0  --machine 64 --compile -cudart static  -g   -DWIN32 -DWIN64 -D_DEBUG -D_CONSOLE -D_MBCS -Xcompiler "/EHsc /W3 /nologo /Od /Fdx64\Debug\vc142.pdb /FS /Zi /RTC1 /MDd " -o x64\Debug\histogramEqualizationCUDA.cu.obj "C:\Users\eghia\source\repos\HistogramEqualizationCUDA\HistogramEqualizationCUDA\histogramEqualizationCUDA.cu" 
+C:/Users/eghia/source/repos/HistogramEqualizationCUDA/HistogramEqualizationCUDA/histogramEqualizationCUDA.cu(194): warning : variable "host_equalized" was declared but never referenced
+  
   histogramEqualizationCUDA.cu
 C:/Users/eghia/source/repos/HistogramEqualizationCUDA/HistogramEqualizationCUDA/histogramEqualizationCUDA.cu(266): warning C4244: 'inizializzazione': conversione da '_Rep' a 'double'. Possibile perdita di dati.
           with
           [
               _Rep=__int64
           ]
+C:/Users/eghia/source/repos/HistogramEqualizationCUDA/HistogramEqualizationCUDA/histogramEqualizationCUDA.cu(194): warning C4101: 'host_equalized': variabile locale senza riferimenti
   HistogramEqualizationCUDA.vcxproj -> C:\Users\eghia\source\repos\HistogramEqualizationCUDA\x64\Debug\HistogramEqualizationCUDA.exe
