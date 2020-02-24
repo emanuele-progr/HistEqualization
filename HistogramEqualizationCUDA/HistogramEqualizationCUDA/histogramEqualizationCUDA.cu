@@ -57,14 +57,14 @@ __global__ void calcCumulativeHist(int* cumulative_dist, int* histogram,
 	int i = threadIdx.x + blockDim.x * blockIdx.x;
 
 	//load phase, load values on shared memory
-	if (i <  HIST_LENGHT )
+	if (i < HIST_LENGHT)
 		partialScan[i] = histogram[i];
 	__syncthreads();
 
 	//work efficient reduction phase
 	for (unsigned int stride = 1; stride <= HIST_LENGHT / 2; stride *= 2) {
 		unsigned int index = (threadIdx.x + 1) * stride * 2 - 1;
-		if (index <  HIST_LENGHT )
+		if (index < HIST_LENGHT)
 			partialScan[index] += partialScan[index - stride];
 		__syncthreads();
 	}
@@ -73,7 +73,7 @@ __global__ void calcCumulativeHist(int* cumulative_dist, int* histogram,
 	for (unsigned int stride = HIST_LENGHT / 2; stride > 0; stride /= 2) {
 		__syncthreads();
 		unsigned int index = (threadIdx.x + 1) * stride * 2 - 1;
-		if (index + stride < HIST_LENGHT ) {
+		if (index + stride < HIST_LENGHT) {
 			partialScan[index + stride] += partialScan[index];
 		}
 	}
@@ -92,14 +92,16 @@ __global__ void convertToYCbCr(unsigned char* image, int width, int height, int*
 	long index;
 
 
-	__shared__ int hist_priv[HIST_LENGHT];
+	__shared__ int hist_shared[HIST_LENGHT];
 
 	for (int bin_idx = threadIdx.x; bin_idx < HIST_LENGHT; bin_idx += blockDim.x) {
-		hist_priv[bin_idx] = 0;
+		hist_shared[bin_idx] = 0;
 	}
 
-	__syncthreads();
 	
+
+	__syncthreads();
+
 	for (int i = idx; i < width * height; i += blockDim.x * gridDim.x) {
 
 		index = i * 3;
@@ -113,7 +115,7 @@ __global__ void convertToYCbCr(unsigned char* image, int width, int height, int*
 		int Cr = R * .439000 + G * -.368000 + B * -.071000 + 128;
 
 
-		atomicAdd(&(hist_priv[Y]), 1);
+		atomicAdd(&(hist_shared[Y]), 1);
 
 		image[index] = Y;
 		image[index + 1] = Cb;
@@ -121,13 +123,13 @@ __global__ void convertToYCbCr(unsigned char* image, int width, int height, int*
 	}
 
 	__syncthreads();
-
+	
 	//The shared histograms are added to the global histogram.
 	for (int bin_idx = threadIdx.x; bin_idx < HIST_LENGHT; bin_idx += blockDim.x) {
-		atomicAdd(&(histogram[bin_idx]), hist_priv[bin_idx]);
+		atomicAdd(&(histogram[bin_idx]), hist_shared[bin_idx]);
 	}
 
-
+	
 
 
 }
@@ -181,7 +183,7 @@ int main() {
 	for (size_t i = 0; i < filenames.size(); i++) {
 
 		Mat im = imread(filenames[i]);
-		resize(im, im, Size(800, 600), INTER_NEAREST);
+		resize(im, im, Size(7680, 4800), INTER_NEAREST);
 		//imshow("Original Image", im);
 		//waitKey();
 
@@ -191,7 +193,7 @@ int main() {
 
 		auto start = chrono::steady_clock::now();
 
-		int host_equalized[HIST_LENGHT];						//cpu equalized histogram
+		//int host_equalized[HIST_LENGHT];						//cpu equalized histogram
 		//int host_cumulative_dist[HIST_LENGHT] = { 0 };
 
 		unsigned char* host_image = im.ptr();		//Mat image to array image
@@ -212,40 +214,43 @@ int main() {
 		CUDA_CHECK_RETURN(cudaMalloc((void**)&device_cumulative_dist, sizeof(int) * 256));
 
 		//copy the image on global memory.
-		
+
 		CUDA_CHECK_RETURN(cudaMemcpy(device_image, host_image, sizeof(char) * (width * height * 3), cudaMemcpyHostToDevice));
+
+		//CUDA_CHECK_RETURN(cudaMemcpy(device_histogram, host_histogram, sizeof(int) * 256, cudaMemcpyHostToDevice));
 
 		//initialize gpu hist and cumulative hist
 
-		CUDA_CHECK_RETURN(cudaMemset(device_histogram, 0, sizeof(int) * 256));
 		CUDA_CHECK_RETURN(cudaMemset(device_cumulative_dist, 0, sizeof(int) * 256));
+		CUDA_CHECK_RETURN(cudaMemset(device_histogram, 0, sizeof(int) * 256));
+
 
 		int block_size = HIST_LENGHT;
-		int grid_size = ((width * height + (block_size - 1)) / block_size) / 2 ;
+		int grid_size = ((width * height + (block_size - 1)) / block_size) / 2;
 
 		//first kernel to build histogram and convert to YCbCr.
-		
+
 		convertToYCbCr << <grid_size, block_size >> > (device_image, width, height, device_histogram);
 
 		//CUDA_CHECK_RETURN(cudaMemcpy(host_histogram, device_histogram, sizeof(int) * 256, cudaMemcpyDeviceToHost));
-		
+
 		/*
 		host_cumulative_dist[0] = host_histogram[0];
 
 		for (int i = 1; i < HIST_LENGHT; i++) {
 			host_cumulative_dist[i] = host_histogram[i] + host_cumulative_dist[i - 1];
 		}
-		
+
 		*/
 
 		//CUDA_CHECK_RETURN(cudaMemcpy(device_equalized, host_equalized, sizeof(int) * 256, cudaMemcpyHostToDevice));
 		//CUDA_CHECK_RETURN(cudaMemcpy(device_cumulative_dist, host_cumulative_dist, sizeof(int) * 256, cudaMemcpyHostToDevice));
-
+		
 		calcCumulativeHist << <1, block_size >> > (device_cumulative_dist, device_histogram, width, height);
 
 		//second kernel that do the real equalization.
 
-		equalize << <1, block_size >> > (device_equalized, device_cumulative_dist,  width, height);
+		equalize << <1, block_size >> > (device_equalized, device_cumulative_dist, width, height);
 
 		//third and last kernel to go back to RGB.
 
@@ -266,14 +271,14 @@ int main() {
 		double elapsed_time = chrono::duration_cast<chrono::milliseconds>(end - start).count();
 
 
-		cout << "elapsed : " << elapsed_time;
+		cout << "elapsed : " << elapsed_time << " ms  ";
 
 		cout << "correctly freed memory \n";
 
 		Mat equalized_image = Mat(Size(width, height), CV_8UC3, host_image);
 		//imwrite(filenames[i] + "Equalized.jpg",final_image);
-		imshow("Final Image", equalized_image);
-		waitKey();
+		//imshow("Final Image", equalized_image);
+		//waitKey();
 
 		timesAdded += elapsed_time;
 		imageCounter += 1;
