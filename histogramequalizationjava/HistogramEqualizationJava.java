@@ -18,18 +18,17 @@ import java.awt.image.Raster;
 import java.io.File;
 import java.io.IOException;
 
-import static java.lang.Math.round;
 public class HistogramEqualizationJava {
 
        public static BufferedImage resize(BufferedImage img, int newW, int newH) {
         Image tmp = img.getScaledInstance(newW, newH, Image.SCALE_SMOOTH);
-        BufferedImage dimg = new BufferedImage(newW, newH, BufferedImage.TYPE_INT_RGB);
+        BufferedImage res_img = new BufferedImage(newW, newH, BufferedImage.TYPE_INT_RGB);
 
-        Graphics2D g2d = dimg.createGraphics();
+        Graphics2D g2d = res_img.createGraphics();
         g2d.drawImage(tmp, 0, 0, null);
         g2d.dispose();
 
-        return dimg;
+        return res_img;
     }
 
 
@@ -40,29 +39,29 @@ public class HistogramEqualizationJava {
         Raster raster = image.getRaster();
 
         for (int y = 0; y < image.getHeight(); y++) {
-            int[] iarray = new int[image.getWidth()*3];
+            int[] im = new int[image.getWidth()*3];
 
-            raster.getPixels(0, y, image.getWidth(), 1, iarray);
+            raster.getPixels(0, y, image.getWidth(), 1, im);
 
             for (int x = 0; x < image.getWidth()*3; x+=3) {
 
-                int R = iarray[x+0];
-                int G = iarray[x+1];
-                int B = iarray[x+2];
+                int R = im[x+0];
+                int G = im[x+1];
+                int B = im[x+2];
 
                 int Y = (int) (R * .257000 + G * .504000 + B * .098000 + 16);
                 int Cb = (int) (R * -.148000 + G * -.291000 + B * .439000 + 128);
                 int Cr = (int) (R * .439000 + G * -.368000 + B * -.071000 + 128);
 
 
-                iarray[x+0] = Y;
-                iarray[x+1] = Cb;
-                iarray[x+2] = Cr;
+                im[x+0] = Y;
+                im[x+1] = Cb;
+                im[x+2] = Cr;
 
                 histogram[Y] ++;
             }
 
-            image.getRaster().setPixels(0, y, image.getWidth(), 1, iarray);
+            image.getRaster().setPixels(0, y, image.getWidth(), 1, im);
         }
     }
     
@@ -85,30 +84,30 @@ public class HistogramEqualizationJava {
         Raster raster = img.getRaster();
 
         for (int y = 0; y < img.getHeight(); y ++) {
-            int[] iarray = new int[img.getWidth()*3];
+            int[] im = new int[img.getWidth()*3];
 
-            raster.getPixels(0, y, img.getWidth(), 1, iarray);
+            raster.getPixels(0, y, img.getWidth(), 1, im);
 
             for (int x = 0; x < img.getWidth()*3; x+=3) {
 
-                int valueBefore = iarray[x];
-                int valueAfter = equalizedHist[valueBefore];
+                int valueBefore = im[x];
+                int valueEqualized = equalizedHist[valueBefore];
 
-                iarray[x] = valueAfter;
+                im[x] = valueEqualized;
 
-                int Y = iarray[x+0];
-                int Cb = iarray[x+1];
-                int Cr = iarray[x+2];
+                int Y = im[x+0];
+                int Cb = im[x+1];
+                int Cr = im[x+2];
 
                 int R = Math.max(0, Math.min(255, (int) ((Y - 16) * 1.164 + 1.596 * (Cr - 128))));
                 int G = Math.max(0, Math.min(255, (int) ((Y - 16) * 1.164 - 0.813 * (Cr - 128) - (0.392 * (Cb - 128)))));
                 int B = Math.max(0, Math.min(255, (int) ((Y - 16) * 1.164 + 2.017 * (Cb - 128))));
 
-                iarray[x+0] = R;
-                iarray[x+1] = G;
-                iarray[x+2] = B;
+                im[x+0] = R;
+                im[x+1] = G;
+                im[x+2] = B;
             }
-            img.getRaster().setPixels(0,y, img.getWidth(), 1,  iarray);
+            img.getRaster().setPixels(0,y, img.getWidth(), 1,  im);
         }
     }
     
@@ -124,13 +123,13 @@ public class HistogramEqualizationJava {
              try{
                  String s = "img/" + file.getName();
                  img = ImageIO.read(new File(s));
-                 img = resize( img ,800, 600);
+                 img = resize( img ,1500, 1500);
          
          
                  
-                 ImageIcon icon = new ImageIcon(img);
-                 JLabel label = new JLabel(icon, JLabel.CENTER);
-                 JOptionPane.showMessageDialog(null, label, "Original image", -1);
+                 //ImageIcon icon = new ImageIcon(img);
+                 //JLabel label = new JLabel(icon, JLabel.CENTER);
+                 //JOptionPane.showMessageDialog(null, label, "Original image", -1);
 
                  int cols = img.getWidth();
                  int rows = img.getHeight();
