@@ -21,6 +21,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.CompletionService;
+import java.util.concurrent.ExecutorCompletionService;
 
 import static java.lang.Math.ceil;
 
@@ -62,7 +64,8 @@ public class HistogramEqualizationJavaThread {
                  
                  String s = "img/" + file.getName();
                  img = ImageIO.read(new File(s));
-                 img = resize(img, 1000, 1000);
+                 img = resize(img, 7680, 4800);
+                   
                  
              }catch(IOException e) {
                  System.out.println(e);
@@ -71,9 +74,9 @@ public class HistogramEqualizationJavaThread {
          
              try{
 
-                ImageIcon icon = new ImageIcon(resize(img, 300, 300));
-                JLabel label = new JLabel(icon, JLabel.CENTER);
-                JOptionPane.showMessageDialog(null, label, "Original image", -1);
+                //ImageIcon icon = new ImageIcon(resize(img, 300, 300));
+                //JLabel label = new JLabel(icon, JLabel.CENTER);
+                //JOptionPane.showMessageDialog(null, label, "Original image", -1);
                 int cores = Runtime.getRuntime().availableProcessors();
                 
                 long startTime = System.currentTimeMillis();
@@ -91,7 +94,7 @@ public class HistogramEqualizationJavaThread {
                 //we use a fixed pool of threads equal to the number of cores/threads
                 
                 ExecutorService exec = Executors.newFixedThreadPool(cores);
-                
+                CompletionService<int []> completionService = new ExecutorCompletionService<int []>(exec);
                 //divide the image according to the number of threads
 
                 int yStart = subdivision((double)height, cores);
@@ -106,14 +109,14 @@ public class HistogramEqualizationJavaThread {
                     BufferedImage subImg = img.getSubimage(0,(i*yStart),(width),(subHeight));
 
                     //start a thread that run the callable function on the subImg to convert RGB->YCbCr
-                    
-                    futures.add(exec.submit(new ConvertToYCbCr(subImg)));
+                    completionService.submit(new ConvertToYCbCr(subImg));
+                    //futures.add(exec.submit(new ConvertToYCbCr(subImg)));
 
                 }
                 //Wait for the pool to finish and reconstruct the histogram
                 
                 for(Future<int[]> future : futures){
-                    
+                    future = completionService.take();
                     int[] localHist = future.get();
                     
                     for(int j = 0; j < 256; j++) {
@@ -140,12 +143,14 @@ public class HistogramEqualizationJavaThread {
                 //each thread runs the equalization on a part of the histogram
 
                 futures.clear();
+                
 
                 for(int i = 0; i < cores; i++){
                     
                     if(i == cores -1 && 256 % cores != 0){
                         subHistogram = 256 - i*subdivision((double)256, cores);
                     }
+                    
                     futures.add(exec.submit(new ThreadEqualizer(i, subHistogram, cumulativeHist, equalizedHist, width, height)));
                 }
                 //get histogram_equalized and clear futures
@@ -171,9 +176,6 @@ public class HistogramEqualizationJavaThread {
                     futures.add(exec.submit(new RevertToRGB(subImg, equalizedHist)));
                     
                 }
-                for(Future future : futures){
-                    future.get();
-                }
 
                 exec.shutdown();
                 exec.awaitTermination(1, TimeUnit.MINUTES);
@@ -182,10 +184,10 @@ public class HistogramEqualizationJavaThread {
                 long duration = (endTime - startTime); 
                 System.out.println(duration + " ms");
 
-                //Display the new image
-                icon = new ImageIcon(resize(img, 300, 300));
-                label = new JLabel(icon, JLabel.CENTER);
-                JOptionPane.showMessageDialog(null, label, "Image Equalized", -1);
+                
+                //icon = new ImageIcon(resize(img, 300, 300));
+                //label = new JLabel(icon, JLabel.CENTER);
+                //JOptionPane.showMessageDialog(null, label, "Image Equalized", -1);
 
                 imageCounter += 1;
                 sumTimes += duration;
